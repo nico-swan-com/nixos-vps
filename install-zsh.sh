@@ -12,11 +12,15 @@ export KEY_DISK=/dev/mapper/cryptkey
 # BIOS MBR partition (8MB)
 # /boot partition (1GB)
 # LUKS key partition (20MB)
-# LUKS swap partition (8GB)
+# LUKS swap partition (2GB)
 # ZFS root partition (Remaining space)
 # NOTE: Make the ZFS root partition your last partition, so that if you resize the disk it will be easy to get ZFS to use the extra space
 parted --script $DISK mklabel gpt
-parted --script --align optimal $DISK -- mklabel gpt mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on mkpart 'boot' 8MB 1026MB mkpart 'luks-key' 1026MB 1046MB mkpart 'luks-swap' 1046MB 9238MB mkpart 'zfs-pool' 9238MB '100%'
+parted --script --align optimal $DISK -- mklabel gpt mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on \
+    mkpart 'boot' 8MB 1026MB \
+	mkpart 'luks-key' 1026MB 1046MB \
+	mkpart 'luks-swap' 1046MB 4118MB \
+	mkpart 'zfs-pool' 4118MB '100%'
 
 # tr -d '\n' < /dev/urandom | dd of=/dev/disk/by-partlabel/key
 # Create an encrypted disk to hold our key, the key to this drive
@@ -155,7 +159,7 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 	boot.zfs.devNodes = "/dev/disk/by-partuuid/$RPOOL_PARTUUID";
 	boot.zfs.forceImportAll = true;
 
-	# ZFS ARC Size 64MB
+	# ZFS ARC Size 8GB
 	boot.kernelParams = [ "zfs.zfs_arc_max=8589934592" ];
 
 	networking.hostId = "$(head -c 8 /etc/machine-id)";
