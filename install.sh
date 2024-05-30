@@ -9,7 +9,7 @@ export KEY_DISK=/dev/mapper/cryptkey
 
 # we use parted here since it does a good job with adding BIOS protective MBR to GPT disk
 # since we are booting in BIOS mode, we get a max of 4 primary partitions
-# BIOS MBR partition (1MB)
+# BIOS MBR partition (8MB)
 # /boot partition (1GB)
 # LUKS key partition (20MB)
 # LUKS swap partition (2GB)
@@ -155,13 +155,24 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 	networking.hostId = "$(head -c 8 /etc/machine-id)";
 	boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
 
+	# boot.loader.grub = {
+	# 	enable = true;
+	# 	copyKernels = true;
+	# 	zfsSupport = true;
+	# 	device = "/dev/sda";
+	# 	efiSupport = true;
+	# };
+
 	boot.loader.grub = {
-		enable = true;
-		copyKernels = true;
-		zfsSupport = true;
-		device = "/dev/sda";
-		efiSupport = true;
-	};
+      enable = true;
+	  copyKernels = true;
+      zfsSupport = true;
+      efiSupport = true;
+      efiInstallAsRemovable = true;
+      mirroredBoots = [
+        { devices = [ "nodev" "/dev/sda" ]; path = "/boot"; }
+      ];
+  };
 }
 EOF
 
