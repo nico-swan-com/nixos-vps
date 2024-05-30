@@ -114,8 +114,14 @@ export CRYPTSWAP="${CRYPTSWAP#UUID=*}"
 export RPOOL_PARTUUID="$(blkid -o export $(echo $DISK | cut -f1 -d\ )5 | grep "^PARTUUID=")"
 export RPOOL_PARTUUID="${RPOOL_PARTUUID#PARTUUID=*}"
 
+# Disable xserver
+sed -i "s|services.xserver|# services.xserver|g" /mnt/etc/nixos/configuration.nix
+
 # Import ZFS/boot-specific configuration
-sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix ./networking.nix ./users.nix|g" /mnt/etc/nixos/configuration.nix
+sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix ./networking.nix ./users.nix ./nix-config.nix|g" /mnt/etc/nixos/configuration.nix
+
+
+
 
 # Set root password
 export rootPwd=$(mkpasswd -m SHA-512 -s "VerySecurePassword")
@@ -148,11 +154,13 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 	networking.hostId = "$(head -c 8 /etc/machine-id)";
 	boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
 
+	boot.loader.systemd-boot.enable = true;
+
 	boot.loader.grub = {
 		enable = true;
 		copyKernels = true;
 		zfsSupport = true;
-		device = "/dev/sda2";
+		device = "/dev/sda";
 	};
 }
 EOF
@@ -190,6 +198,36 @@ tee -a /mnt/etc/nixos/networking.nix <<EOF
     }];
     networking.defaultGateway = "102.135.163.1";
     networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
+
+}
+EOF
+
+tee -a /mnt/etc/nixos/nix-config.nix <<EOF
+{ config, pkgs, lib, ... }:
+{
+
+  # Set your time zone.
+  time.timeZone = "Africa/Johannesburg";
+
+  # Select internationalisation properties.
+  i18n.defaultLocale = "en_ZA.UTF-8";
+
+  # Configure keymap in X11
+  services.xserver = {
+    xkb.layout = "za";
+    xkb.variant = "";
+  };	
+    
+  nix = {
+    settings = {
+      # Necessary for using flakes on this system.
+      experimental-features = "nix-command flakes";
+    };
+
+    extraOptions = ''
+      experimental-features = nix-command flakes
+    '';
+  };
 
 }
 EOF
