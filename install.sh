@@ -39,8 +39,8 @@ read
 
 # Format swap as encrypted LUKS and mount the partition
 export DISK1_SWAP=$(echo $DISK | cut -f1 -d\ )4
-cryptsetup luksFormat --key-file=$KEY_DISK --keyfile-size=64 $DISK1_SWAP
-cryptsetup open --key-file=$KEY_DISK --keyfile-size=64 $DISK1_SWAP cryptswap
+cryptsetup luksFormat --key-file=$KEY_DISK --keyfile-size=66 $DISK1_SWAP
+cryptsetup open --key-file=$KEY_DISK --keyfile-size=66 $DISK1_SWAP cryptswap
 mkswap /dev/mapper/cryptswap
 swapon /dev/mapper/cryptswap
 
