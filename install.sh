@@ -237,8 +237,9 @@ EOF
 nixos-install -v --show-trace --no-root-passwd --root /mnt
 
 # Unmount filesystems
-#umount -Rl /mnt
-#zpool export -a
+umount -Rl /mnt
+zpool export -a
 
+echo "Reboot"
 # Reboot
 #reboot
