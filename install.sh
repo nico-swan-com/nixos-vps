@@ -1,7 +1,7 @@
 # The disk that will be used
 # NOTE: If installing on an nvme drive (ie: /dev/nvme0n1), you'll need to replace all occurrences of ${DISK}# with ${DISK}p# where # is the partition number.
 # Don't forget to also replace all occurences of $(echo $DISK | cut -f1 -d\ )# with $(echo $DISK | cut -f1 -d\ )p#
-export DISK='/dev/vda'
+export DISK='/dev/sda'
 
 export LUKS_KEY_DISK=cryptkey
 export KEYFILE_LOCATION=/cryptkey
