@@ -148,7 +148,7 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 		cryptswap = {
 			device = "/dev/disk/by-uuid/$CRYPTSWAP";
 			keyFile = "$KEY_DISK";
-			keyFileSize = 64;
+			keyFileSize = 66;
 		};
 	};
 
