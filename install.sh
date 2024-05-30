@@ -250,6 +250,9 @@ tee -a /mnt/etc/nixos/nix-config.nix <<EOF
 EOF
 
 
+echo "Press any key to start installation"
+read
+
 # Install system and apply configuration
 nixos-install -v --show-trace --no-root-passwd --root /mnt
 
