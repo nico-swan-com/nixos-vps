@@ -115,15 +115,15 @@ export RPOOL_PARTUUID="$(blkid -o export $(echo $DISK | cut -f1 -d\ )5 | grep "^
 export RPOOL_PARTUUID="${RPOOL_PARTUUID#PARTUUID=*}"
 
 # Import ZFS/boot-specific configuration
-sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix|g" /mnt/etc/nixos/configuration.nix
+sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix ./networking.nix ./users.nix|g" /mnt/etc/nixos/configuration.nix
 
 # Set root password
 export rootPwd=$(mkpasswd -m SHA-512 -s "VerySecurePassword")
 # Write boot.nix configuration
 tee -a /mnt/etc/nixos/boot.nix <<EOF
 { config, pkgs, lib, ... }:
-
-{ boot.supportedFilesystems = [ "zfs" ];
+{
+    boot.supportedFilesystems = [ "zfs" ];
 	# Kernel modules needed for mounting LUKS devices in initrd stage
 	boot.initrd.availableKernelModules = [ "aesni_intel" "cryptd" ];
 
@@ -154,7 +154,12 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 		zfsSupport = true;
 		device = "/dev/sda2";
 	};
+}
+EOF
 
+tee -a /mnt/etc/nixos/users.nix <<EOF
+{ config, pkgs, lib, ... }:
+{
 	users.users.root.initialHashedPassword = "$rootPwd";
 	users.users.nicoswan = {
           isNormalUser = true;
@@ -171,8 +176,14 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
       settings.PasswordAuthentication = true;
       settings.PermitRootLogin = "yes";
     };
+}
+EOF
 
-	networking.useDHCP = false; # lib.mkDefault true;
+tee -a /mnt/etc/nixos/networking.nix <<EOF
+{ config, pkgs, lib, ... }:
+{
+    
+	networking.useDHCP = lib.mkDefault false;
     networking.interfaces.ens18.ipv4.addresses = [{
        address = "102.135.163.95";
        prefixLength = 24;
@@ -188,8 +199,8 @@ EOF
 nixos-install -v --show-trace --no-root-passwd --root /mnt
 
 # Unmount filesystems
-umount -Rl /mnt
-zpool export -a
+#umount -Rl /mnt
+#zpool export -a
 
 # Reboot
-#:wreboot
+#reboot
