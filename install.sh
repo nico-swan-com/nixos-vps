@@ -1,7 +1,7 @@
 # The disk that will be used
 # NOTE: If installing on an nvme drive (ie: /dev/nvme0n1), you'll need to replace all occurrences of ${DISK}# with ${DISK}p# where # is the partition number.
 # Don't forget to also replace all occurences of $(echo $DISK | cut -f1 -d\ )# with $(echo $DISK | cut -f1 -d\ )p#
-export DISK='/dev/sda'
+export DISK='/dev/sda' 
 
 export LUKS_KEY_DISK=cryptkey
 export KEYFILE_LOCATION=/cryptkey
@@ -152,7 +152,7 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 		enable = true;
 		copyKernels = true;
 		zfsSupport = true;
-		device = "/dev/vda2";
+		device = "/dev/sda2";
 	};
 
 	users.users.root.initialHashedPassword = "$rootPwd";
@@ -164,8 +164,25 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop"
           ];
         };
+
+	# Enable the OpenSSH daemon.
+    services.openssh = {
+      enable = true;
+      settings.PasswordAuthentication = true;
+      settings.PermitRootLogin = "yes";
+    };
+
+	networking.useDHCP = false; # lib.mkDefault true;
+    networking.interfaces.ens18.ipv4.addresses = [{
+       address = "102.135.163.95";
+       prefixLength = 24;
+    }];
+    networking.defaultGateway = "102.135.163.1";
+    networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
+
 }
 EOF
+
 
 # Install system and apply configuration
 nixos-install -v --show-trace --no-root-passwd --root /mnt
