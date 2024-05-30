@@ -175,4 +175,4 @@ umount -Rl /mnt
 zpool export -a
 
 # Reboot
-reboot
+#:wreboot
