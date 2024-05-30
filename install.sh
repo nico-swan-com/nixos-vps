@@ -121,7 +121,8 @@ sed -i "s|services.xserver|# services.xserver|g" /mnt/etc/nixos/configuration.ni
 sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix ./networking.nix ./users.nix ./nix-config.nix|g" /mnt/etc/nixos/configuration.nix
 
 
-
+# Disable dhcp
+sed -i "s|networking.useDHCP|# networking.useDHCP|g" /mnt/etc/nixos/hardware-configuration.nix
 
 # Set root password
 export rootPwd=$(mkpasswd -m SHA-512 -s "VerySecurePassword")
