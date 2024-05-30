@@ -161,7 +161,8 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 		enable = true;
 		copyKernels = true;
 		zfsSupport = true;
-		device = "/dev/sda";
+		device = nodev;
+		efiSupport = true;
 	};
 }
 EOF
