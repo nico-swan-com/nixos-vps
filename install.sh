@@ -155,13 +155,11 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
 	networking.hostId = "$(head -c 8 /etc/machine-id)";
 	boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
 
-	# boot.loader.systemd-boot.enable = true;
-
 	boot.loader.grub = {
 		enable = true;
 		copyKernels = true;
 		zfsSupport = true;
-		device = "nodev";
+		devices = [ "/dev/sda" "/dev/sda2" ];
 		efiSupport = true;
 	};
 }
