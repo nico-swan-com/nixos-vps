@@ -1,7 +1,7 @@
 # The disk that will be used
 # NOTE: If installing on an nvme drive (ie: /dev/nvme0n1), you'll need to replace all occurrences of ${DISK}# with ${DISK}p# where # is the partition number.
 # Don't forget to also replace all occurences of $(echo $DISK | cut -f1 -d\ )# with $(echo $DISK | cut -f1 -d\ )p#
-export DISK='/dev/sda'
+export DISK='/dev/vda'
 
 export LUKS_KEY_DISK=cryptkey
 export KEYFILE_LOCATION=/cryptkey
@@ -18,7 +18,7 @@ export KEY_DISK=/dev/mapper/cryptkey
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK -- mklabel gpt mkpart 'BIOS-boot' 1MB 2MB set 1 bios_grub on mkpart 'boot' 2MB 1026MB mkpart 'luks-key' 1026MB 1046MB mkpart 'luks-swap' 1046MB 3094MB mkpart 'zfs-pool' 3094MB '100%'
 
-# tr -d '\n' &lt; /dev/urandom | dd of=/dev/disk/by-partlabel/key
+# tr -d '\n' < /dev/urandom | dd of=/dev/disk/by-partlabel/key
 # Create an encrypted disk to hold our key, the key to this drive
 # is what you'll type in to unlock the rest of your drives... so,
 # remember it:
@@ -27,9 +27,9 @@ cryptsetup luksFormat $DISK1_KEY
 cryptsetup luksOpen $DISK1_KEY cryptkey
 
 # Write the key right to the decrypted LUKS partition, as raw bytes
-echo "" &gt; newline
+echo "" > newline
 dd if=/dev/zero bs=1 count=1 seek=1 of=newline
-dd if=/dev/urandom bs=32 count=1 | od -A none -t x | tr -d '[:space:]' | cat - newline &gt; hdd.key
+dd if=/dev/urandom bs=32 count=1 | od -A none -t x | tr -d '[:space:]' | cat - newline > hdd.key
 dd if=/dev/zero of=$KEY_DISK
 dd if=hdd.key of=$KEY_DISK
 dd if=$KEY_DISK bs=64 count=1
@@ -120,7 +120,7 @@ sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix|g
 # Set root password
 export rootPwd=$(mkpasswd -m SHA-512 -s "VerySecurePassword")
 # Write boot.nix configuration
-tee -a /mnt/etc/nixos/boot.nix &lt;&lt;EOF
+tee -a /mnt/etc/nixos/boot.nix <<EOF
 { config, pkgs, lib, ... }:
 
 { boot.supportedFilesystems = [ "zfs" ];
