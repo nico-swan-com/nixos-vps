@@ -30,9 +30,12 @@ cryptsetup luksOpen $DISK1_KEY cryptkey
 echo "" > newline
 dd if=/dev/zero bs=1 count=1 seek=1 of=newline
 dd if=/dev/urandom bs=32 count=1 | od -A none -t x | tr -d '[:space:]' | cat - newline > hdd.key
-dd if=/dev/zero of=$KEY_DISK
+#dd if=/dev/zero of=$KEY_DISK
 dd if=hdd.key of=$KEY_DISK
 dd if=$KEY_DISK bs=66 count=1
+
+echo "Press any key to continue"
+read
 
 # Format swap as encrypted LUKS and mount the partition
 export DISK1_SWAP=$(echo $DISK | cut -f1 -d\ )4
@@ -69,6 +72,9 @@ zfs create \
 	-o canmount=off \
 	-o mountpoint=none \
 	rpool/safe
+
+echo "Press any key to continue"
+read
 
 # Create and mount dataset for `/`
 zfs create -p -o mountpoint=legacy rpool/local/root
@@ -247,10 +253,12 @@ EOF
 # Install system and apply configuration
 nixos-install -v --show-trace --no-root-passwd --root /mnt
 
+echo "Press any key to reboot"
+read
+
 # Unmount filesystems
 umount -Rl /mnt
 zpool export -a
 
-echo "Reboot"
 # Reboot
-#reboot
+reboot
