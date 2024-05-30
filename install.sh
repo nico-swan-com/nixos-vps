@@ -32,7 +32,7 @@ dd if=/dev/zero bs=1 count=1 seek=1 of=newline
 dd if=/dev/urandom bs=32 count=1 | od -A none -t x | tr -d '[:space:]' | cat - newline > hdd.key
 dd if=/dev/zero of=$KEY_DISK
 dd if=hdd.key of=$KEY_DISK
-dd if=$KEY_DISK bs=64 count=1
+dd if=$KEY_DISK bs=66 count=1
 
 # Format swap as encrypted LUKS and mount the partition
 export DISK1_SWAP=$(echo $DISK | cut -f1 -d\ )4
