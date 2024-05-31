@@ -18,7 +18,7 @@ create_partitions()
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK \
 #   mkpart 'BIOS-boot' 1MB 8MB \
-   mkpart 'ESP' 8MB 1026MB set 2 esp on \
+   mkpart 'ESP' 1MB 1026MB set 2 esp on \
    mkpart 'swap' 1026MB 4098MB \
    mkpart 'root' 4098MB '100%'
 
