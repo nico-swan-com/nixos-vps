@@ -17,29 +17,32 @@ create_partitions()
 # NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK \
-   mkpart 'BIOS-boot' 1MB 8MB \
+#   mkpart 'BIOS-boot' 1MB 8MB \
    mkpart 'ESP' 8MB 1026MB set 2 esp on \
    mkpart 'swap' 1026MB 4098MB \
    mkpart 'root' 4098MB '100%'
 
 # Root format and mount
-mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )4
-mount $(echo $DISK | cut -f1 -d\ )4 /mnt
+mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )3
+mount $(echo $DISK | cut -f1 -d\ )3 /mnt
 
 # Swap format and mount
-mkswap -L swap $(echo $DISK | cut -f1 -d\ )3
-swapon $(echo $DISK | cut -f1 -d\ )3
+mkswap -L swap $(echo $DISK | cut -f1 -d\ )2
+swapon $(echo $DISK | cut -f1 -d\ )2
 
 # create and mount boot partition
 mkdir -p /mnt/boot
-mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )2
-mount -o umask=077 $(echo $DISK | cut -f1 -d\ )2 /mnt/boot
+mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )1
+mount -o umask=077 $(echo $DISK | cut -f1 -d\ )1 /mnt/boot
 }
 
 create_config() 
 {
 # Generate initial system configuration
 nixos-generate-config --root /mnt
+
+# Disable xserver
+sed -i "s|boot.loader.grub.enable|# boot.loader.grub.enable|g" /mnt/etc/nixos/configuration.nix
 
 # Disable xserver
 sed -i "s|services.xserver|# services.xserver|g" /mnt/etc/nixos/configuration.nix
@@ -191,5 +194,5 @@ reboot
 
 create_partitions
 create_config
-#install_nixos
-#reboot_now
+install_nixos
+reboot_now
