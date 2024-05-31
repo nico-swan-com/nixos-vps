@@ -11,22 +11,24 @@ export DISK='/dev/sda'
 # XFS root partition (Remaining space)
 # NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
 parted --script $DISK mklabel gpt
-parted --script --align optimal $DISK -- mklabel gpt mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on \
-   mkpart 'boot' 8MB 1026MB \
+parted --script --align optimal $DISK \
+   mkpart 'BIOS-boot' 1MB 8MB set 1 esp on \
+   mkpart 'ESP' 8MB 1026MB \
    mkpart 'swap' 1026MB 4098MB \
-   mkpart 'nixos' 4098MB '100%'
+   mkpart 'root' 4098MB '100%'
 
-mkfs.xfs -L nixos $(echo $DISK | cut -f1 -d\ )3
-mkswap -L swap $(echo $DISK | cut -f1 -d\ )2
+# Root format and mount
+mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )4
+mount $(echo $DISK | cut -f1 -d\ )4 /mnt
 
-
-# Mount root ZFS dataset
-mount -t xfs /dev/sda3 /mnt
+# Swap format and mount
+mkswap -L swap $(echo $DISK | cut -f1 -d\ )3
+swapon $(echo $DISK | cut -f1 -d\ )3
 
 # create and mount boot partition
 mkdir -p /mnt/boot
-mkfs.vfat -F32 $(echo $DISK | cut -f1 -d\ )2
-mount -t vfat $(echo $DISK | cut -f1 -d\ )2 /mnt/boot
+mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )2
+mount -o umask=077 /dev/disk/by-label/boot /mnt/boot
 
 # Generate initial system configuration
 nixos-generate-config --root /mnt
@@ -55,14 +57,15 @@ tee -a /mnt/etc/nixos/boot.nix <<EOF
   };
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.loader.grub = {
-    enable = true;
-    efiSupport = true;
-    efiInstallAsRemovable = true;
-    mirroredBoots = [
-      { devices = [ "nodev" "$DISK" ]; path = "/boot"; }
-    ];
-  };
+  boot.loader.systemd-boot.enable = true; 
+  # boot.loader.grub = {
+  #   enable = true;
+  #   efiSupport = true;
+  #   efiInstallAsRemovable = true;
+  #   mirroredBoots = [
+  #     { devices = [ "nodev" "$DISK" ]; path = "/boot"; }
+  #   ];
+  # };
 }
 EOF
 
