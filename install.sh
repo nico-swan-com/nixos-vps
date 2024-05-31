@@ -17,8 +17,8 @@ create_partitions()
 # NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK \
-   mkpart 'BIOS-boot' 1MB 8MB set 1 esp on \
-   mkpart 'ESP' 8MB 1026MB \
+   mkpart 'BIOS-boot' 1MB 8MB \
+   mkpart 'ESP' 8MB 1026MB set 2 esp on \
    mkpart 'swap' 1026MB 4098MB \
    mkpart 'root' 4098MB '100%'
 
@@ -33,7 +33,7 @@ swapon $(echo $DISK | cut -f1 -d\ )3
 # create and mount boot partition
 mkdir -p /mnt/boot
 mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )2
-mount -o umask=077 /dev/disk/by-label/boot /mnt/boot
+mount -o umask=077 $(echo $DISK | cut -f1 -d\ )2 /mnt/boot
 }
 
 create_config() 
