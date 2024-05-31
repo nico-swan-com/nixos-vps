@@ -166,7 +166,7 @@ EOF
 }
 
 
-install()
+install_nixos()
 {
 echo "Press any key to start installation"
 read
@@ -179,7 +179,7 @@ read
 
 }
 
-reboot() 
+reboot_now() 
 {
 # Unmount filesystems
 umount -Rl /mnt
@@ -189,7 +189,7 @@ zpool export -a
 reboot
 }
 
-create_partitions()
-create_config()
-#install()
-#reboot()
+create_partitions
+create_config
+#install_nixos
+#reboot_now
