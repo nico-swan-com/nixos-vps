@@ -1,8 +1,13 @@
+#!/bin/sh
 # The disk that will be used
 # NOTE: If installing on an nvme drive (ie: /dev/nvme0n1), you'll need to replace all occurrences of ${DISK}# with ${DISK}p# where # is the partition number.
 # Don't forget to also replace all occurences of $(echo $DISK | cut -f1 -d\ )# with $(echo $DISK | cut -f1 -d\ )p#
 export DISK='/dev/sda' 
 
+
+
+create_partitions()
+{
 # we use parted here since it does a good job with adding BIOS protective MBR to GPT disk
 # since we are booting in BIOS mode, we get a max of 4 primary partitions
 # BIOS MBR partition (8MB)
@@ -29,7 +34,10 @@ swapon $(echo $DISK | cut -f1 -d\ )3
 mkdir -p /mnt/boot
 mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )2
 mount -o umask=077 /dev/disk/by-label/boot /mnt/boot
+}
 
+create_config() 
+{
 # Generate initial system configuration
 nixos-generate-config --root /mnt
 
@@ -155,8 +163,11 @@ tee -a /mnt/etc/nixos/nix-config.nix <<EOF
   ];
 }
 EOF
+}
 
 
+install()
+{
 echo "Press any key to start installation"
 read
 
@@ -166,9 +177,19 @@ nixos-install -v --show-trace --no-root-passwd --root /mnt
 echo "Press any key to reboot"
 read
 
+}
+
+reboot() 
+{
 # Unmount filesystems
 umount -Rl /mnt
 zpool export -a
 
 # Reboot
 reboot
+}
+
+create_partitions()
+create_config()
+#install()
+#reboot()
