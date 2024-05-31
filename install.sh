@@ -171,14 +171,9 @@ EOF
 
 install_nixos()
 {
-echo "Press any key to start installation"
-read
 
 # Install system and apply configuration
 nixos-install -v --show-trace --no-root-passwd --root /mnt
-
-echo "Press any key to reboot"
-read
 
 }
 
@@ -189,7 +184,7 @@ umount -Rl /mnt
 zpool export -a
 
 # Reboot
-reboot
+#reboot
 }
 
 create_partitions
