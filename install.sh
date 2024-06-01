@@ -3,6 +3,13 @@
 # NOTE: If installing on an nvme drive (ie: /dev/nvme0n1), you'll need to replace all occurrences of ${DISK}# with ${DISK}p# where # is the partition number.
 # Don't forget to also replace all occurences of $(echo $DISK | cut -f1 -d\ )# with $(echo $DISK | cut -f1 -d\ )p#
 export DISK='/dev/sda' 
+export userPwd='$y$j9T$sZlZK2gaQO/GLQPMMjGDS1$uCF3JloZrwTzLsxZuAvkJrw6/Z6ls/jPbkJgO/EqQy1';
+export hostname="vm403bfeq";
+export hostdomain="cygnus-labs.com";
+export username="nicoswan";
+export defaultPasswordHash="$userPwd";
+export userPublicKey="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop";
+export diskDevice="$DISK";
 
 
 
@@ -49,13 +56,6 @@ rm /mnt/etc/nixos/configuration.nix
 vi /mnt/etc/nixos/hardware-configuration.nix
 
 # Set root password
-export userPwd='$y$j9T$sZlZK2gaQO/GLQPMMjGDS1$uCF3JloZrwTzLsxZuAvkJrw6/Z6ls/jPbkJgO/EqQy1';
-export hostname = "vm403bfeq";
-export hostdomain = "cygnus-labs.com";
-export username = "nicoswan";
-export defaultPasswordHash = "$userPwd";
-export userPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop";
-export diskDevice = "/dev/sda";
 # Write boot.nix configuration
 tee -a /mnt/etc/nixos/configuration.nix <<EOF
 { lib, config, pkgs, ... }:
@@ -129,7 +129,7 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
   # Bootloader.
   boot.loader.grub = {
     enable = true;
-    device = "${diskDevice}";
+    device = "$diskDevice";
   };
 
   # boot.loader.systemd-boot = {
@@ -172,8 +172,8 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
   }];
   networking.defaultGateway = "102.135.163.1";
   networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
-  networking.hostName = "${hostname}"; # Define your hostname.
-  networking.domain = "${hostdomain}";
+  networking.hostName = "$hostname"; # Define your hostname.
+  networking.domain = "$hostdomain";
 
 
   # Set your time zone.
@@ -187,22 +187,22 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
 
   # Default users
   users.mutableUsers = false;
-  users.users.root.initialHashedPassword = "${defaultPasswordHash}";
-  users.users.${username} = {
+  users.users.root.initialHashedPassword = "$defaultPasswordHash";
+  users.users.$username = {
     isNormalUser = true;
     extraGroups = [ "networkmanager" "wheel" ];
-    hashedPassword = "${defaultPasswordHash}";
-    openssh.authorizedKeys.keys = [ "${userPublicKey}" ];
+    hashedPassword = "$defaultPasswordHash";
+    openssh.authorizedKeys.keys = [ "$userPublicKey" ];
     shell = pkgs.zsh; # default shell
   };
   users.users.vmbfeqcy = {
     isNormalUser = true;
-    hashedPassword = "${defaultPasswordHash}";
-    openssh.authorizedKeys.keys = [ "${userPublicKey}" ];
+    hashedPassword = "$defaultPasswordHash";
+    openssh.authorizedKeys.keys = [ "$userPublicKey" ];
   };
 
   # Enable automatic login for the user.
-  services.getty.autologinUser = "${username}";
+  services.getty.autologinUser = "$username";
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -242,7 +242,7 @@ vi /mnt/etc/nixos/configuration.nix
 
 install_nixos()
 {
-
+export NIX_CHANNEL=nixos-24.05
 # Install system and apply configuration
 nixos-install -v --show-trace --no-root-passwd --root /mnt
 
