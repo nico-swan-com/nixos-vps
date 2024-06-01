@@ -61,6 +61,8 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
 { lib, config, pkgs, ... }:
 {
 
+  imports = [ ./hardware-configuration.nix ];
+
   #Hardware
   # My Initrd config, enable ZSTD compression and use systemd-based stage 1 boot
   boot.initrd = {
