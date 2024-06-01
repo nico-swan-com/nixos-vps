@@ -50,18 +50,15 @@ vi /mnt/etc/nixos/hardware-configuration.nix
 
 # Set root password
 export userPwd='$y$j9T$sZlZK2gaQO/GLQPMMjGDS1$uCF3JloZrwTzLsxZuAvkJrw6/Z6ls/jPbkJgO/EqQy1';
+export hostname = "vm403bfeq";
+export hostdomain = "cygnus-labs.com";
+export username = "nicoswan";
+export defaultPasswordHash = "$userPwd";
+export userPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop";
+export diskDevice = "/dev/sda";
 # Write boot.nix configuration
 tee -a /mnt/etc/nixos/configuration.nix <<EOF
 { lib, config, pkgs, ... }:
-let
-  hostname = "vm403bfeq";
-  hostdomain = "cygnus-labs.com";
-  username = "nicoswan";
-  defaultPasswordHash = "$userPwd";
-  userPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop";
-
-  diskDevice = "/dev/sda";
-in
 {
 
   #Hardware
