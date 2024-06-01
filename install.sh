@@ -17,10 +17,15 @@ create_partitions()
 # NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK \
-#   mkpart 'BIOS-boot' 1MB 8MB \
-   mkpart 'ESP' 1MB 1026MB set 2 esp on \
-   mkpart 'swap' 1026MB 4098MB \
-   mkpart 'root' 4098MB '100%'
+   mkpart 'ESP' 1MB 1024MB set 1 esp on \
+   mkpart 'swap' 1024MB 4096MB \
+   mkpart 'root' 4096MB '100%'
+
+# parted --script --align optimal $DISK \
+#    mkpart 'BIOS-boot' 1MB 8MB \
+#    mkpart 'ESP' 1MB 1026MB set 2 esp on \
+#    mkpart 'swap' 1026MB 4098MB \
+#    mkpart 'root' 4098MB '100%'
 
 # Root format and mount
 mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )3
@@ -40,113 +45,83 @@ create_config()
 {
 # Generate initial system configuration
 nixos-generate-config --root /mnt
-
-# Disable xserver
-sed -i "s|boot.loader.grub.enable|# boot.loader.grub.enable|g" /mnt/etc/nixos/configuration.nix
-
-# Disable xserver
-sed -i "s|services.xserver|# services.xserver|g" /mnt/etc/nixos/configuration.nix
-
-# Import ZFS/boot-specific configuration
-sed -i "s|./hardware-configuration.nix|./hardware-configuration.nix ./boot.nix ./networking.nix ./users.nix ./nix-config.nix|g" /mnt/etc/nixos/configuration.nix
-
-# Disable dhcp
-sed -i "s|networking.useDHCP|# networking.useDHCP|g" /mnt/etc/nixos/hardware-configuration.nix
+rm /mnt/etc/nixos/configuration.nix
+vi /mnt/etc/nixos/hardware-configuration.nix
 
 # Set root password
 export userPwd='$y$j9T$sZlZK2gaQO/GLQPMMjGDS1$uCF3JloZrwTzLsxZuAvkJrw6/Z6ls/jPbkJgO/EqQy1';
 # Write boot.nix configuration
-tee -a /mnt/etc/nixos/boot.nix <<EOF
-{ config, pkgs, lib, ... }:
+tee -a /mnt/etc/nixos/configuration.nix <<EOF
+{ lib, config, pkgs, ... }:
+let
+  hostname = "vm403bfeq";
+  hostdomain = "cygnus-labs.com";
+  username = "nicoswan";
+  defaultPasswordHash = "$userPwd";
+  userPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop";
+
+  diskDevice = "/dev/sda";
+in
 {
 
+  #Hardware
   # My Initrd config, enable ZSTD compression and use systemd-based stage 1 boot
   boot.initrd = {
     compressor = "zstd";
     compressorArgs = [ "-19" "-T0" ];
     systemd.enable = true;
   };
-
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.loader.systemd-boot.enable = true; 
-  # boot.loader.grub = {
-  #   enable = true;
-  #   efiSupport = true;
-  #   efiInstallAsRemovable = true;
-  #   mirroredBoots = [
-  #     { devices = [ "nodev" "$DISK" ]; path = "/boot"; }
-  #   ];
-  # };
-}
-EOF
+  boot.initrd.availableKernelModules = [
+    "ata_piix"
+    "uhci_hcd"
+    "xen_blkfront"
+    "vmw_pvscsi"
+    "virtio_net"
+    "virtio_pci"
+    "virtio_mmio"
+    "virtio_blk"
+    "virtio_scsi"
+    "9p"
+    "9pnet_virtio"
+  ];
+  #boot.initrd.kernelModules = [ "nvme" "kvm-intel" "virtio_balloon" "virtio_console" "virtio_rng" ];
+  boot.initrd.kernelModules = [ "nvme" "kvm-intel" "virtio_console" "virtio_rng" ];
+  boot.initrd.postDeviceCommands = lib.mkIf (!config.boot.initrd.systemd.enable)
+    ''
+      # Set the system time from the hardware clock to work around a
+      # bug in qemu-kvm > 1.5.2 (where the VM clock is initialised
+      # to the *boot time* of the host).
+      hwclock -s
+    '';
 
-tee -a /mnt/etc/nixos/users.nix <<EOF
-{ config, pkgs, lib, ... }:
-{
-    users.mutableUsers = false;
-    users.users.root.initialHashedPassword = "$userPwd";
-    users.users.nicoswan = {
-          isNormalUser = true;
-          description = "Nico Swan";
-          extraGroups = [ "networkmanager" "wheel" ];
-          hashedPassword = "$userPwd";
-          openssh.authorizedKeys.keys = [
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop"
-          ];
-        };
+  # boot.initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" "sr_mod" ];
+  # boot.initrd.kernelModules = [ ];
+  # boot.kernelModules = [ "kvm-intel" ];
+  # boot.extraModulePackages = [ ];
 
-    # Enable the OpenSSH daemon.
-    services.openssh = {
-      enable = true;
-      settings.PasswordAuthentication = true;
-      settings.PermitRootLogin = "yes";
-    };
-}
-EOF
+  # boot.loader.grub.device = "/dev/sda";
+  # boot.initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "xen_blkfront" "vmw_pvscsi" ];
+  # boot.initrd.kernelModules = [ "nvme" ];
+  # fileSystems."/" = { device = "/dev/sda1"; fsType = "ext4"; };
 
-tee -a /mnt/etc/nixos/networking.nix <<EOF
-{ config, pkgs, lib, ... }:
-{
-    
-  # Disable NixOS's builtin firewall
-  networking.firewall.enable = false;
 
-  # Hostname, can be set as you wish
-  networking.hostName = "vm403bfeq";
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  networking.useDHCP = lib.mkDefault false;
-  networking.interfaces.ens18.ipv4.addresses = [{
-    address = "102.135.163.95";
-    prefixLength = 24;
-  }];
-  networking.defaultGateway = "102.135.163.1";
-  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
 
-}
-EOF
-
-tee -a /mnt/etc/nixos/nix-config.nix <<EOF
-{ config, pkgs, lib, ... }:
-{
-
-  services.qemuGuest.enable = true;	
-
-  # Set your time zone.
-  time.timeZone = "Africa/Johannesburg";
-
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_ZA.UTF-8";
-
-  # Configure keymap in X11
-  services.xserver = {
-    xkb.layout = "za";
-    xkb.variant = "";
-  };    
-    
   nix = {
     settings = {
       # Necessary for using flakes on this system.
       experimental-features = "nix-command flakes";
+
+      # Add needed system-features to the nix daemon
+      # Starting with Nix 2.19, this will be automatic
+      system-features = [
+        "nixos-test"
+      ];
+
+      auto-optimise-store = true;
     };
 
     extraOptions = ''
@@ -154,6 +129,83 @@ tee -a /mnt/etc/nixos/nix-config.nix <<EOF
     '';
   };
 
+  # Bootloader.
+  boot.loader.grub = {
+    enable = true;
+    device = "${diskDevice}";
+  };
+
+  # boot.loader.systemd-boot = {
+  #   enable = true;
+  #   memtest86.enable = true;
+  # };
+  #   boot.loader = {
+  #   efi = {
+  #     canTouchEfiVariables = true;
+  #     efiSysMountPoint = "/boot/efi";
+  #   };
+  #   grub = {
+  #      efiSupport = true;
+  #      efiInstallAsRemovable = true; 
+  #      device = "nodev";
+  #   };
+  # };
+  # boot.loader = {
+  #   efi = {
+  #     canTouchEfiVariables = true;
+  #     # efiSysMountPoint = "/boot/efi";
+  #   };
+  #   grub = {
+  #     enable = true;
+  #     efiSupport = true;
+  #     efiInstallAsRemovable = true;
+  #     mirroredBoots = [
+  #       { devices = [ "nodev" "${diskDevice}" ]; path = "/boot"; }
+  #     ];
+  #   };
+  # };
+
+
+  # Enable networking
+  networking.networkmanager.enable = true;
+  networking.useDHCP = false; # lib.mkDefault true;
+  networking.interfaces.ens18.ipv4.addresses = [{
+    address = "102.135.163.95";
+    prefixLength = 24;
+  }];
+  networking.defaultGateway = "102.135.163.1";
+  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
+  networking.hostName = "${hostname}"; # Define your hostname.
+  networking.domain = "${hostdomain}";
+
+
+  # Set your time zone.
+  time.timeZone = "Africa/Johannesburg";
+
+  # Select internationalisation properties.
+  i18n.defaultLocale = "en_ZA.UTF-8";
+
+  # Set /etc/zshrc
+  programs.zsh.enable = true;
+
+  # Default users
+  users.mutableUsers = false;
+  users.users.root.initialHashedPassword = "${defaultPasswordHash}";
+  users.users.${username} = {
+    isNormalUser = true;
+    extraGroups = [ "networkmanager" "wheel" ];
+    hashedPassword = "${defaultPasswordHash}";
+    openssh.authorizedKeys.keys = [ "${userPublicKey}" ];
+    shell = pkgs.zsh; # default shell
+  };
+  users.users.vmbfeqcy = {
+    isNormalUser = true;
+    hashedPassword = "${defaultPasswordHash}";
+    openssh.authorizedKeys.keys = [ "${userPublicKey}" ];
+  };
+
+  # Enable automatic login for the user.
+  services.getty.autologinUser = "${username}";
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -162,10 +214,32 @@ tee -a /mnt/etc/nixos/nix-config.nix <<EOF
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     vim
-    btop
   ];
+
+  # Enable the OpenSSH daemon.
+  services.openssh = {
+    enable = true;
+    settings.PasswordAuthentication = true;
+    settings.PermitRootLogin = "yes";
+  };
+
+  # Quemu guest agent
+  services.qemuGuest.enable = true;
+
+  networking.firewall.enable = false;
+
+  # Required for remote vscode
+  # https://nixos.wiki/wiki/Visual_Studio_Code
+  programs.nix-ld.enable = true;
+
+  system.stateVersion = "24.05";
 }
+
+
 EOF
+
+vi /mnt/etc/nixos/configuration.nix
+
 }
 
 
