@@ -64,12 +64,7 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
   imports = [ ./hardware-configuration.nix ];
 
   #Hardware
-  # My Initrd config, enable ZSTD compression and use systemd-based stage 1 boot
-  boot.initrd = {
-    compressor = "zstd";
-    compressorArgs = [ "-19" "-T0" ];
-    systemd.enable = true;
-  };
+  
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.initrd.availableKernelModules = [
     "ata_piix"
@@ -94,17 +89,6 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
       hwclock -s
     '';
 
-  # boot.initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" "sr_mod" ];
-  # boot.initrd.kernelModules = [ ];
-  # boot.kernelModules = [ "kvm-intel" ];
-  # boot.extraModulePackages = [ ];
-
-  # boot.loader.grub.device = "/dev/sda";
-  # boot.initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "xen_blkfront" "vmw_pvscsi" ];
-  # boot.initrd.kernelModules = [ "nvme" ];
-  # fileSystems."/" = { device = "/dev/sda1"; fsType = "ext4"; };
-
-
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
@@ -118,6 +102,7 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
       # Starting with Nix 2.19, this will be automatic
       system-features = [
         "nixos-test"
+        "kvm"
       ];
 
       auto-optimise-store = true;
@@ -132,38 +117,8 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
   boot.loader.grub = {
     enable = true;
     device = "$diskDevice";
+    memtest86.enable = true;
   };
-
-  # boot.loader.systemd-boot = {
-  #   enable = true;
-  #   memtest86.enable = true;
-  # };
-  #   boot.loader = {
-  #   efi = {
-  #     canTouchEfiVariables = true;
-  #     efiSysMountPoint = "/boot/efi";
-  #   };
-  #   grub = {
-  #      efiSupport = true;
-  #      efiInstallAsRemovable = true; 
-  #      device = "nodev";
-  #   };
-  # };
-  # boot.loader = {
-  #   efi = {
-  #     canTouchEfiVariables = true;
-  #     # efiSysMountPoint = "/boot/efi";
-  #   };
-  #   grub = {
-  #     enable = true;
-  #     efiSupport = true;
-  #     efiInstallAsRemovable = true;
-  #     mirroredBoots = [
-  #       { devices = [ "nodev" "${diskDevice}" ]; path = "/boot"; }
-  #     ];
-  #   };
-  # };
-
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -176,7 +131,6 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
   networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
   networking.hostName = "$hostname"; # Define your hostname.
   networking.domain = "$hostdomain";
-
 
   # Set your time zone.
   time.timeZone = "Africa/Johannesburg";
@@ -197,6 +151,7 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
     openssh.authorizedKeys.keys = [ "$userPublicKey" ];
     shell = pkgs.zsh; # default shell
   };
+
   users.users.vmbfeqcy = {
     isNormalUser = true;
     hashedPassword = "$defaultPasswordHash";
@@ -211,9 +166,7 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-  environment.systemPackages = with pkgs; [
-    vim
-  ];
+  environment.systemPackages = with pkgs; [ vim ];
 
   # Enable the OpenSSH daemon.
   services.openssh = {
@@ -233,8 +186,6 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
 
   system.stateVersion = "24.05";
 }
-
-
 EOF
 
 vi /mnt/etc/nixos/configuration.nix
