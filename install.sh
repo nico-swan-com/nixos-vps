@@ -53,6 +53,19 @@ create_config()
 # Generate initial system configuration
 nixos-generate-config --root /mnt
 rm /mnt/etc/nixos/configuration.nix
+read
+
+# Disable dhcp
+sed -i "s|networking.useDHCP|# networking.useDHCP|g" /mnt/etc/nixos/hardware-configuration.nix
+# Disable dhcp
+sed -i "s|boot|# boot|g" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|imports|# imports|" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|[|# [|" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|(modulesPath |# (modulesPath |" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|];|# ];|" /mnt/etc/nixos/hardware-configuration.nix
+echo "Press any key to edit hardware-configuration.nix"
+read
+# 
 vi /mnt/etc/nixos/hardware-configuration.nix
 
 # Set root password
