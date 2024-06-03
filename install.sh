@@ -24,7 +24,8 @@ create_partitions()
 # NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK \
-   mkpart 'ESP' 1MB 1024MB set 1 esp on \
+   mkpart 'BIOS-boot' 1MB 8MB set 2 esp on \
+   mkpart 'ESP' 8MB 1024MB \
    mkpart 'swap' 1024MB 4096MB \
    mkpart 'root' 4096MB '100%'
 
@@ -35,23 +36,24 @@ parted --script --align optimal $DISK \
 #    mkpart 'root' 4098MB '100%'
 
 # Root format and mount
-mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )3
-mount $(echo $DISK | cut -f1 -d\ )3 /mnt
+mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )4
+mount $(echo $DISK | cut -f1 -d\ )4 /mnt
 
 # Swap format and mount
-mkswap -L swap $(echo $DISK | cut -f1 -d\ )2
-swapon $(echo $DISK | cut -f1 -d\ )2
+mkswap -L swap $(echo $DISK | cut -f1 -d\ )3
+swapon $(echo $DISK | cut -f1 -d\ )3
 
 # create and mount boot partition
 mkdir -p /mnt/boot
-mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )1
-mount -o umask=077 $(echo $DISK | cut -f1 -d\ )1 /mnt/boot
+mkfs.fat -F 32 -n boot $(echo $DISK | cut -f1 -d\ )2
+mount -o umask=077 $(echo $DISK | cut -f1 -d\ )2 /mnt/boot
 }
 
 create_config() 
 {
 # Generate initial system configuration
 nixos-generate-config --root /mnt
+sleep 1
 rm /mnt/etc/nixos/configuration.nix
 read
 
@@ -60,9 +62,10 @@ sed -i "s|networking.useDHCP|# networking.useDHCP|g" /mnt/etc/nixos/hardware-con
 # Disable dhcp
 sed -i "s|boot|# boot|g" /mnt/etc/nixos/hardware-configuration.nix
 sed -i "s|imports|# imports|" /mnt/etc/nixos/hardware-configuration.nix
-sed -i "s|[|# [|" /mnt/etc/nixos/hardware-configuration.nix
-sed -i "s|(modulesPath |# (modulesPath |" /mnt/etc/nixos/hardware-configuration.nix
-sed -i "s|];|# ];|" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|\[ (modulesPath |# \[ (modulesPath |" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|   ];|  # ];|" /mnt/etc/nixos/hardware-configuration.nix
+sed -i "s|nixpkgs.hostPlatform|# nixpkgs.hostPlatform|" /mnt/etc/nixos/hardware-configuration.nix
+
 echo "Press any key to edit hardware-configuration.nix"
 read
 # 
