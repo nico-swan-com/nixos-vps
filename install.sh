@@ -211,10 +211,9 @@ reboot_now()
 {
 # Unmount filesystems
 umount -Rl /mnt
-zpool export -a
 
 # Reboot
-#reboot
+reboot
 }
 
 create_partitions
