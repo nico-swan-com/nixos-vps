@@ -9,9 +9,6 @@ export hostdomain="cygnus-labs.com";
 export username="nicoswan";
 export defaultPasswordHash="$userPwd";
 export userPublicKey="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJzDICPeNfXXLIEnf4FEQ5ZGX6REsNEPaeRbyxOh7vVL NicoMacLaptop";
-export diskDevice="$DISK";
-
-
 
 create_partitions()
 {
@@ -20,14 +17,14 @@ create_partitions()
 # BIOS MBR partition (8MB)
 # /boot partition (1GB)
 # swap partition (3GB)
-# XFS root partition (Remaining space)
-# NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
-parted --script $DISK mklabel gpt
-parted --script --align optimal $DISK \
-   mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on \
-   mkpart 'ESP' 8MB 1024MB set 2 esp on \
-   mkpart 'swap' 1024MB 4096MB \
-   mkpart 'root' 4096MB '100%'
+# EXT4 root partition (Remaining space)
+# NOTE: Make the EXT4 root partition your last partition, so that if you resize the disk it will be easy to get EXT4 to use the extra space
+parted --script --align optimal $DISK -- \
+  mklabel gpt \
+  mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on \
+  mkpart 'boot' 8MB 1026MB \
+	mkpart 'swap' 1026MB 4098MB \
+	mkpart 'root' 4098MB '100%'
 
 # Root format and mount
 mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )4
@@ -126,7 +123,7 @@ tee -a /mnt/etc/nixos/configuration.nix <<EOF
   # Bootloader.
   boot.loader.grub = {
     enable = true;
-    device = "$diskDevice";
+    device = "$DISK";
     memtest86.enable = true;
   };
 
