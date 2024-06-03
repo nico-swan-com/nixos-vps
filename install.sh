@@ -22,17 +22,17 @@ create_partitions()
 parted --script --align optimal $DISK -- \
   mklabel gpt \
   mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on \
-  mkpart 'boot' 8MB 1026MB \
-	mkpart 'swap' 1026MB 4098MB \
-	mkpart 'root' 4098MB '100%'
+  mkpart 'boot' 8MB 520MB \
+	mkpart 'root' 520MB 156168MB \
+	mkpart 'swap' 156168MB '100%'
 
 # Root format and mount
-mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )4
-mount $(echo $DISK | cut -f1 -d\ )4 /mnt
+mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )3
+mount $(echo $DISK | cut -f1 -d\ )3 /mnt
 
 # Swap format and mount
-mkswap -L swap $(echo $DISK | cut -f1 -d\ )3
-swapon $(echo $DISK | cut -f1 -d\ )3
+mkswap -L swap $(echo $DISK | cut -f1 -d\ )4
+swapon $(echo $DISK | cut -f1 -d\ )4
 
 # create and mount boot partition
 mkdir -p /mnt/boot
@@ -46,7 +46,6 @@ create_config()
 nixos-generate-config --root /mnt
 sleep 1
 rm /mnt/etc/nixos/configuration.nix
-read
 
 # Disable dhcp
 sed -i "s|networking.useDHCP|# networking.useDHCP|g" /mnt/etc/nixos/hardware-configuration.nix
@@ -213,7 +212,7 @@ reboot_now()
 umount -Rl /mnt
 
 # Reboot
-reboot
+#reboot
 }
 
 create_partitions
