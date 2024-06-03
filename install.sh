@@ -24,8 +24,8 @@ create_partitions()
 # NOTE: Make the XFS root partition your last partition, so that if you resize the disk it will be easy to get XFS to use the extra space
 parted --script $DISK mklabel gpt
 parted --script --align optimal $DISK \
-   mkpart 'BIOS-boot' 1MB 8MB set 2 esp on \
-   mkpart 'ESP' 8MB 1024MB \
+   mkpart 'BIOS-boot' 1MB 8MB set 1 bios_grub on \
+   mkpart 'ESP' 8MB 1024MB set 2 esp on \
    mkpart 'swap' 1024MB 4096MB \
    mkpart 'root' 4096MB '100%'
 
