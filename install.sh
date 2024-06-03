@@ -29,12 +29,6 @@ parted --script --align optimal $DISK \
    mkpart 'swap' 1024MB 4096MB \
    mkpart 'root' 4096MB '100%'
 
-# parted --script --align optimal $DISK \
-#    mkpart 'BIOS-boot' 1MB 8MB \
-#    mkpart 'ESP' 1MB 1026MB set 2 esp on \
-#    mkpart 'swap' 1026MB 4098MB \
-#    mkpart 'root' 4098MB '100%'
-
 # Root format and mount
 mkfs.ext4 -L root $(echo $DISK | cut -f1 -d\ )4
 mount $(echo $DISK | cut -f1 -d\ )4 /mnt
